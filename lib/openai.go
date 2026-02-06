@@ -1,6 +1,8 @@
 // some definitions related to OpenAI API
 package main
 
+// consttants
+
 const (
 	OpenAIBaseURL           = "https://api.openai.com"
 	ChatCompletionsEndpoint = "/v1/chat/completions"
@@ -13,19 +15,39 @@ const (
 	GPT5Mini  GptModel = "gpt-5-mini"
 )
 
+type ImageDetail string
+
+const (
+	ImageDetailLow  ImageDetail = "low"
+	ImageDetailHigh ImageDetail = "high"
+)
+
+// data structures for API requests / responses
+
 type ChatMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+	Role    string      `json:"role"`
+	Content interface{} `json:"content"` // either string or []ContentPart
+}
+
+type ImageUrl struct {
+	URL    string      `json:"url"`
+	Detail ImageDetail `json:"detail,omitempty"`
+}
+
+type ContentPart struct {
+	Type     string    `json:"type"`
+	Text     string    `json:"text,omitempty"`
+	ImageUrl *ImageUrl `json:"image_url,omitempty"`
 }
 
 type ChatRequest struct {
 	Model       GptModel      `json:"model"`
-	Message     []ChatMessage `json:"messages"`
+	Messages    []ChatMessage `json:"messages"`
 	Temperature float32       `json:"temperature,omitempty"`
 }
 
 type ChatChoice struct {
-	Index        int64       `json:"index"`
+	Index        int         `json:"index"`
 	Message      ChatMessage `json:"message"`
 	FinishReason string      `json:"finish_reason"`
 }
