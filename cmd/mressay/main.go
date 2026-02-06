@@ -14,7 +14,8 @@ func main() {
 
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
-
+		fmt.Printf("Need 'OPENAI_API_KEY' environemnt variable to use OpenAI API")
+		return
 	}
 
 	imgToTxtAgent := openai.NewAgent(ctx, openai.GPT4oMini, apiKey, "")
