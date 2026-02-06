@@ -17,7 +17,7 @@ func main() {
 
 	}
 
-	agent := openai.NewAgent(ctx, openai.GPT4oMini, apiKey, "")
+	imgToTxtAgent := openai.NewAgent(ctx, openai.GPT4oMini, apiKey, "")
 
 	img, err := os.ReadFile("./img.jpeg")
 	if err != nil {
@@ -25,7 +25,7 @@ func main() {
 		return
 	}
 
-	r, err := agent.TextFromImage(img)
+	r, err := imgToTxtAgent.ImageToText(img)
 	if err != nil {
 		fmt.Printf("Error: %s", err)
 		return

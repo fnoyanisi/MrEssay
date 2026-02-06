@@ -69,7 +69,7 @@ func sendRequest(ctx context.Context, chatRequest ChatRequest) (string, error) {
 	return content, nil
 }
 
-func (a *Agent) TextFromImage(img []byte) (string, error) {
+func (a *Agent) ImageToText(img []byte) (string, error) {
 	// read the image
 	b64 := base64.StdEncoding.EncodeToString(img)
 	imgUri := "data:image/jpeg:base64," + b64
@@ -118,7 +118,7 @@ func (a *Agent) TextFromImage(img []byte) (string, error) {
 	return sendRequest(a.Context, payload)
 }
 
-func (a *Agent) TextFromText(message string) (string, error) {
+func (a *Agent) TextToText(message string) (string, error) {
 
 	// create the payload
 	parts := []ContentPart{
