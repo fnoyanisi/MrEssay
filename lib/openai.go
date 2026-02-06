@@ -43,7 +43,7 @@ type ContentPart struct {
 type ChatRequest struct {
 	Model       GptModel      `json:"model"`
 	Messages    []ChatMessage `json:"messages"`
-	Temperature float32       `json:"temperature,omitempty"`
+	Temperature *float32      `json:"temperature,omitempty"`
 }
 
 type ChatChoice struct {
