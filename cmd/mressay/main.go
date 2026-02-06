@@ -17,18 +17,20 @@ func main() {
 
 	}
 
+	agent := openai.NewAgent(ctx, openai.GPT4oMini, apiKey, "")
+
 	img, err := os.ReadFile("./img.jpeg")
 	if err != nil {
 		fmt.Printf("Error reading the image: %w", err)
 		return
 	}
 
-	r, err := openai.TextFromImage(ctx, apiKey, img)
+	r, err := agent.TextFromImage(img)
 	if err != nil {
 		fmt.Printf("Error: %s", err)
 		return
 	}
 
-	fmt.Printf("Resonse : %s", r)
+	fmt.Printf("Response : %s", r)
 
 }

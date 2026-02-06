@@ -69,7 +69,7 @@ func sendRequest(ctx context.Context, chatRequest ChatRequest) (string, error) {
 	return content, nil
 }
 
-func TextFromImage(ctx context.Context, apiKey string, img []byte) (string, error) {
+func (a *Agent) TextFromImage(img []byte) (string, error) {
 	// read the image
 	b64 := base64.StdEncoding.EncodeToString(img)
 	imgUri := "data:image/jpeg:base64," + b64
@@ -115,5 +115,37 @@ func TextFromImage(ctx context.Context, apiKey string, img []byte) (string, erro
 		Temperature: &temp,
 	}
 
-	return sendRequest(ctx, payload)
+	return sendRequest(a.Context, payload)
+}
+
+func (a *Agent) TextFromText(message string) (string, error) {
+
+	// create the payload
+	parts := []ContentPart{
+		{
+			Type: "test",
+			Text: a.Role,
+		},
+		{
+			Type: "text",
+			Text: message,
+		},
+	}
+
+	userMessage := ChatMessage{
+		Role:    "user",
+		Content: parts,
+	}
+
+	var messages []ChatMessage
+	messages = append(messages, userMessage)
+
+	temp := float32(0.0)
+	payload := ChatRequest{
+		Model:       GPT4oMini,
+		Messages:    messages,
+		Temperature: &temp,
+	}
+
+	return sendRequest(a.Context, payload)
 }

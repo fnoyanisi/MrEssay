@@ -1,6 +1,8 @@
 // some definitions related to OpenAI API
 package openai
 
+import "context"
+
 // consttants
 
 const (
@@ -55,4 +57,33 @@ type ChatChoice struct {
 type ChatResponse struct {
 	ID      string       `json:"id"`
 	Choices []ChatChoice `json:"choices"`
+}
+
+type Agent struct {
+	Model    GptModel
+	ApiKey   string
+	Role     string
+	Context  context.Context
+	Messages []ChatMessage
+}
+
+func NewAgent(ctx context.Context, model GptModel, apiKey string, role string) *Agent {
+	agent := &Agent{
+		Context: ctx,
+		ApiKey:  apiKey,
+		Role:    role,
+	}
+
+	// assign defaults
+	if model == "" {
+		agent.Model = model
+	} else {
+		agent.Model = GPT4oMini
+	}
+
+	if role == "" {
+		agent.Role = "You are a helpful assistant. Answer clearly and concisely. Do not add fluff."
+	}
+
+	return agent
 }
