@@ -1,5 +1,5 @@
 // some definitions related to OpenAI API
-package main
+package openai
 
 // consttants
 
