@@ -9,59 +9,19 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 )
 
-func TextFromImage(ctx context.Context, apiKey string, img []byte) (string, error) {
-
+func sendRequest(ctx context.Context, chatRequest ChatRequest) (string, error) {
 	endPoint := OpenAIBaseURL + ChatCompletionsEndpoint
 
-	// read the image
-	b64 := base64.StdEncoding.EncodeToString(img)
-	imgUri := "data:image/jpeg:base64," + b64
-
-	imageUrl := ImageUrl{
-		URL:    imgUri,
-		Detail: ImageDetailLow,
+	apiKey := os.Getenv("OPENAI_API_KEY")
+	if apiKey == "" {
+		return "", errors.New("Cannot find OPENAI_API_KEY environment variable.")
 	}
 
-	// create the payload
-	parts := []ContentPart{
-		{
-			// prompt, used an LLM to generate it ;)
-			Type: "text",
-			Text: "You are performing strict optical character recognition (OCR)." +
-				"The image contains a letter or an essay." +
-				"Transcribe exactly the text visible in the image." +
-				"- Preserve original spelling, grammar, typos, punctuation, capitalization, and line breaks." +
-				"- Do not correct or normalize anything." +
-				"- Do not infer missing text." +
-				"- Do not add explanations, summaries, or context." +
-				"- Do not prepend or append any text." +
-				"Output only the raw transcribed text, exactly as it appears.",
-		},
-		{
-			Type:     "image_url",
-			ImageUrl: &imageUrl,
-		},
-	}
-
-	userMessage := ChatMessage{
-		Role:    "user",
-		Content: parts,
-	}
-
-	var messages []ChatMessage
-	messages = append(messages, userMessage)
-
-	temp := float32(0.0)
-	payload := ChatRequest{
-		Model:       GPT4oMini,
-		Messages:    messages,
-		Temperature: &temp,
-	}
-
-	jsonData, err := json.Marshal(payload)
+	jsonData, err := json.Marshal(chatRequest)
 	if err != nil {
 		return "", fmt.Errorf("Error while marhsalling JSON : %w", err)
 	}
@@ -107,5 +67,53 @@ func TextFromImage(ctx context.Context, apiKey string, img []byte) (string, erro
 	}
 
 	return content, nil
+}
 
+func TextFromImage(ctx context.Context, apiKey string, img []byte) (string, error) {
+	// read the image
+	b64 := base64.StdEncoding.EncodeToString(img)
+	imgUri := "data:image/jpeg:base64," + b64
+
+	imageUrl := ImageUrl{
+		URL:    imgUri,
+		Detail: ImageDetailLow,
+	}
+
+	// create the payload
+	parts := []ContentPart{
+		{
+			// prompt, used an LLM to generate it ;)
+			Type: "text",
+			Text: "You are performing strict optical character recognition (OCR)." +
+				"The image contains a letter or an essay." +
+				"Transcribe exactly the text visible in the image." +
+				"- Preserve original spelling, grammar, typos, punctuation, capitalization, and line breaks." +
+				"- Do not correct or normalize anything." +
+				"- Do not infer missing text." +
+				"- Do not add explanations, summaries, or context." +
+				"- Do not prepend or append any text." +
+				"Output only the raw transcribed text, exactly as it appears.",
+		},
+		{
+			Type:     "image_url",
+			ImageUrl: &imageUrl,
+		},
+	}
+
+	userMessage := ChatMessage{
+		Role:    "user",
+		Content: parts,
+	}
+
+	var messages []ChatMessage
+	messages = append(messages, userMessage)
+
+	temp := float32(0.0)
+	payload := ChatRequest{
+		Model:       GPT4oMini,
+		Messages:    messages,
+		Temperature: &temp,
+	}
+
+	return sendRequest(ctx, payload)
 }
