@@ -50,7 +50,7 @@ type ChatResponse struct {
 
 // functions
 
-func (a *Agent) AskWithImage(prompt string, img []byte) (string, error) {
+func (a *Agent) ChatWithImage(prompt string, img []byte) (string, error) {
 	// read the image
 	b64 := base64.StdEncoding.EncodeToString(img)
 	imgUri := "data:image/jpeg;base64," + b64
@@ -80,7 +80,7 @@ func (a *Agent) AskWithImage(prompt string, img []byte) (string, error) {
 	return a.send(userMessage)
 }
 
-func (a *Agent) Ask(message string) (string, error) {
+func (a *Agent) Chat(message string) (string, error) {
 	userMessage := ChatMessage{
 		Role:    "user",
 		Content: message,
