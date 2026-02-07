@@ -1,78 +1,59 @@
 package openai
 
 import (
-	"bytes"
-	"context"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
-	"os"
-	"time"
 )
 
-func sendRequest(ctx context.Context, chatRequest ChatRequest) (string, error) {
-	endPoint := OpenAIBaseURL + ChatCompletionsEndpoint
+// data structures for API requests / responses
 
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	if apiKey == "" {
-		return "", errors.New("Cannot find OPENAI_API_KEY environment variable.")
-	}
+type ImageDetail string
 
-	jsonData, err := json.Marshal(chatRequest)
-	if err != nil {
-		return "", fmt.Errorf("Error while marhsalling JSON : %w", err)
-	}
+const (
+	ImageDetailLow  ImageDetail = "low"
+	ImageDetailHigh ImageDetail = "high"
+)
 
-	// create http request
-	req, err := http.NewRequestWithContext(ctx, "POST", endPoint, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return "", fmt.Errorf("Error while creating HTTP request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-
-	// send the http request
-	client := &http.Client{Timeout: 60 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("HTTP request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("Reading the HTTP response failed: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("End-point returned code %d: %s", resp.StatusCode, string(body))
-	}
-
-	// parse the response
-	var chatResp ChatResponse
-	if err := json.Unmarshal(body, &chatResp); err != nil {
-		return "", fmt.Errorf("Error unmarhslling the response: %w", err)
-	}
-
-	if len(chatResp.Choices) == 0 {
-		return "", errors.New("No response from LLM")
-	}
-
-	content, ok := chatResp.Choices[0].Message.Content.(string)
-	if !ok {
-		return "", errors.New("The response content is not a string")
-	}
-
-	return content, nil
+type ChatMessage struct {
+	Role    string      `json:"role"`
+	Content interface{} `json:"content"` // either string or []ContentPart
 }
 
-func (a *Agent) ImageToText(img []byte) (string, error) {
+type ImageUrl struct {
+	URL    string      `json:"url"`
+	Detail ImageDetail `json:"detail,omitempty"`
+}
+
+type ContentPart struct {
+	Type     string    `json:"type"`
+	Text     string    `json:"text,omitempty"`
+	ImageUrl *ImageUrl `json:"image_url,omitempty"`
+}
+
+type ChatRequest struct {
+	Model       GptModel      `json:"model"`
+	Messages    []ChatMessage `json:"messages"`
+	Temperature *float32      `json:"temperature,omitempty"`
+}
+
+type ChatChoice struct {
+	Index        int         `json:"index"`
+	Message      ChatMessage `json:"message"`
+	FinishReason string      `json:"finish_reason"`
+}
+
+type ChatResponse struct {
+	ID      string       `json:"id"`
+	Choices []ChatChoice `json:"choices"`
+}
+
+// functions
+
+func (a *Agent) AskWithImage(prompt string, img []byte) (string, error) {
 	// read the image
 	b64 := base64.StdEncoding.EncodeToString(img)
-	imgUri := "data:image/jpeg:base64," + b64
+	imgUri := "data:image/jpeg;base64," + b64
 
 	imageUrl := ImageUrl{
 		URL:    imgUri,
@@ -82,17 +63,8 @@ func (a *Agent) ImageToText(img []byte) (string, error) {
 	// create the payload
 	parts := []ContentPart{
 		{
-			// prompt, used an LLM to generate it ;)
 			Type: "text",
-			Text: "You are performing strict optical character recognition (OCR)." +
-				"The image contains a letter or an essay." +
-				"Transcribe exactly the text visible in the image." +
-				"- Preserve original spelling, grammar, typos, punctuation, capitalization, and line breaks." +
-				"- Do not correct or normalize anything." +
-				"- Do not infer missing text." +
-				"- Do not add explanations, summaries, or context." +
-				"- Do not prepend or append any text." +
-				"Output only the raw transcribed text, exactly as it appears.",
+			Text: prompt,
 		},
 		{
 			Type:     "image_url",
@@ -105,47 +77,49 @@ func (a *Agent) ImageToText(img []byte) (string, error) {
 		Content: parts,
 	}
 
-	var messages []ChatMessage
-	messages = append(messages, userMessage)
-
-	temp := float32(0.0)
-	payload := ChatRequest{
-		Model:       GPT4oMini,
-		Messages:    messages,
-		Temperature: &temp,
-	}
-
-	return sendRequest(a.Context, payload)
+	return a.send(userMessage)
 }
 
-func (a *Agent) TextToText(message string) (string, error) {
-
-	// create the payload
-	parts := []ContentPart{
-		{
-			Type: "test",
-			Text: a.Role,
-		},
-		{
-			Type: "text",
-			Text: message,
-		},
-	}
-
+func (a *Agent) Ask(message string) (string, error) {
 	userMessage := ChatMessage{
 		Role:    "user",
-		Content: parts,
+		Content: message,
 	}
 
-	var messages []ChatMessage
-	messages = append(messages, userMessage)
+	return a.send(userMessage)
+}
 
-	temp := float32(0.0)
+// change the temperature before sending the message
+func (a *Agent) WithTemperature(temp float32) (*Agent, error) {
+	if temp < 0.0 || temp > 2.0 {
+		return nil, fmt.Errorf("Invalid temperature value : %f", temp)
+	}
+	copy := *a
+	copy.Temperature = temp
+	return &copy, nil
+}
+
+// send the message and update the memeroy, not public
+func (a *Agent) send(chatMessage ChatMessage) (string, error) {
+	a.Messages = append(a.Messages, chatMessage)
+
 	payload := ChatRequest{
-		Model:       GPT4oMini,
-		Messages:    messages,
-		Temperature: &temp,
+		Model:       a.Model,
+		Messages:    a.Messages,
+		Temperature: &a.Temperature,
 	}
 
-	return sendRequest(a.Context, payload)
+	response, err := sendApiRequest(a.Context, payload)
+	if err != nil {
+		return "", err
+	}
+
+	a.Messages = append(a.Messages, response)
+
+	content, ok := response.Content.(string)
+	if !ok {
+		return "", errors.New("The response content is not a string")
+	}
+
+	return content, nil
 }
