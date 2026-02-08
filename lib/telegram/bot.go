@@ -11,7 +11,7 @@ import (
 
 type TelegramBot struct {
 	bot    *tgbotapi.BotAPI
-	userId int64
+	userId int64 // so that we can send the messages to the same user
 }
 
 func NewTelegramBot(apiKey string, userId int64) (*TelegramBot, error) {
@@ -28,7 +28,7 @@ func NewTelegramBot(apiKey string, userId int64) (*TelegramBot, error) {
 	}, nil
 }
 
-// blocks the caller, so call in  a separate goroutine
+// blocks the caller
 func (t *TelegramBot) Listen() <-chan tgbotapi.Update {
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 30
@@ -70,10 +70,12 @@ func (t *TelegramBot) SaveTelegramImage(update tgbotapi.Update, path string) err
 	return nil
 }
 
+// this one stops receving the updates, effectively unblocks the caller
 func (t *TelegramBot) StopListening() {
 	t.bot.StopReceivingUpdates()
 }
 
+// sends a message to the same user
 func (t *TelegramBot) SendMessage(message string) error {
 	msg := tgbotapi.NewMessage(t.userId, message)
 
@@ -81,4 +83,9 @@ func (t *TelegramBot) SendMessage(message string) error {
 		return err
 	}
 	return nil
+}
+
+// hello Java Getters
+func (t *TelegramBot) GetUserId() int64 {
+	return t.userId
 }
