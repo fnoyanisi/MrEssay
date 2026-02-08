@@ -36,9 +36,9 @@ func main() {
 		return
 	}
 
-	tgApiKey := os.Getenv("TELEGRAM_API_TOKEN_TEST")
+	tgApiKey := os.Getenv("TELEGRAM_API_TOKEN")
 	if apiKey == "" {
-		fmt.Println("Cannot find TELEGRAM_API_TOKEN_TEST environment variable")
+		fmt.Println("Cannot find TELEGRAM_API_TOKEN environment variable")
 		return
 	}
 
