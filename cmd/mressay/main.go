@@ -142,7 +142,8 @@ func main() {
 		"using the TIDE (Topic sentence, Important ideas, Detailed explanations" +
 		" and Ending) framework. Identify strengths, highlight areas for improvement, " +
 		"and clearly point out spelling, grammar, punctuation, and typing errors. " +
-		"Provide constructive, encouraging and concise feedback."
+		"Provide constructive, encouraging and concise feedback. Keep the tone appropriate" +
+		"for a year 6 student."
 	reviewerAgent := openai.NewAgent(ctx, openai.ModelGPT4oMini, apiKey, reviewerRole)
 
 	prompt := "Here is a text about summer holidays from a student. Review it and let me know the outcome." +
