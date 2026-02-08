@@ -31,6 +31,8 @@ lib/telegram/
   bot.go              # Telegram bot integration
 ```
 
+Use `% go build -o bin/chat cmd/mressay/main.go` to build the project and run `% ./bin/chat` to execute. You can bundle this into a Docker container, use cron to schedule the executions.
+
 ## Some design decisions
 
 * **Agents have memory** (conversation history is stored client-side)
