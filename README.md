@@ -58,4 +58,4 @@ Fun project - probably needs a lot of additions.
 * The Telegram loop blocks (goroutines can be used)
 * No tooling support for Agent
 * Sequential workflow
-
+* Possibly can use the raw Telegram api (I have used a wrapper around a wrapper :/)
