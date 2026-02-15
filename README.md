@@ -40,15 +40,69 @@ Use `% go build -o bin/chat cmd/mressay/main.go` to build the project and run `%
 * **No tool calling or orchestrator agent** jsut KISS
 * **Sequential, explicit workflow** for clarity and control (no DAGs, no Temporal)
 * OCR is treated as a **vision LLM call**, not an external tool (again, me being lazy)
+* Using Alpine Linux, which helps with a smaller image size, for Docker deploymnet.
 
 
 ## Requirements
 
 * Go 1.21+
+* Docker (if you want to deploy and run with a schedule)
 * OpenAI API key (store in `OPENAI_API_KEY` environment variabel)
 * Telegram Bot token (store in `TELEGRAM_API_TOKEN` environment variabel)
 * Telegram User ID (store in `TELEGRAM_ID` environment variabel)
 
+
+## Deployment
+
+This is an optional step. 
+
+We use Docker for deploying MrEssay, hence you need to have Docker available on the platform you want to automate MrEssay.
+
+```
+% git clone https://github.com/fnoyanisi/MrEssay.git
+% cd MrEssay
+% docker build -t mressay:latest .
+
+```
+confirm that the image is successfully created
+
+```
+% docker images
+REPOSITORY                  TAG                            IMAGE ID       CREATED         SIZE
+mressay                     latest                         aae3f0d0329e   9 seconds ago   42MB
+```
+create a volume (since we write in "downloads")
+
+```
+% docker volume create mressay-downloads
+```
+
+then run the container
+
+```
+% docker run -d \
+  --name mressay \
+  --restart unless-stopped \
+  --env-file .env \
+  --read-only \
+  --tmpfs /tmp \
+  -v mressay-downloads:/app/downloads \
+  --log-opt max-size=10m \
+  --log-opt max-file=3 \
+  mressay:latest
+```
+
+You can use `cron` to schedule the execution. The command below runs the container at 10am every Saturday morning (modify the paths based on your case).
+
+```
+$ sudo crontab -e
+0 10 * * 6 /usr/bin/docker run --rm \
+  --env-file /root/mressay/.env \
+  --read-only \
+  --tmpfs /tmp \
+  -v mressay-downloads:/app/downloads \
+  mressay:latest
+```
 
 ## Status
 
